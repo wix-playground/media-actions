@@ -1,0 +1,93 @@
+name: Auth
+description: Auth
+
+inputs:
+  gcp-service-account-key:
+    description: 'gcp service account key'
+    required: true
+  gcp-project-id:
+    description: 'gcp project id'
+    required: true
+  ssh-key-secret-name:
+    description: 'GCP secret manager key for the private git ssh key'
+    required: true
+  aws-key-id-secret-name:
+    description: 'GCP secret manager key for the ACCESS_KEY_ID'
+    required: true
+  aws-key-secret-secret-name:
+    description: 'GCP secret manager key for the AWS_SECRET_ACCESS_KEY'
+    required: true
+  image-name:
+    description: 'the image name'
+    required: true
+  image-version:
+    description: 'the image name'
+    required: false
+    default: ${{ github.ref_name }}
+
+outputs:
+  ecr-registery:
+    description: ecr registery
+    value: ${{ steps.login-ecr.outputs.registry }}
+
+
+runs:
+  using: "composite"
+  steps:
+    - id: build-and-push
+      uses: google-github-actions/auth@v0
+      with:
+        credentials_json: ${{ inputs.gcp-service-account-key }}
+
+    - id: secrets
+      uses: google-github-actions/get-secretmanager-secrets@v0
+      with:
+        secrets: |-
+          GITHUB_ACTIONS_SSH_READ_KEY:${{ inputs.gcp-project-id }}/${{ inputs.ssh-key-secret-name }}
+          GITHUB_ACTIONS_AWS_ACCESS_KEY_ID:${{ inputs.gcp-project-id }}/${{ inputs.aws-key-id-secret-name }}
+          GITHUB_ACTIONS_AWS_SECRET_ACCESS_KEY:${{ inputs.gcp-project-id }}/${{ inputs.aws-key-secret-secret-name }}
+
+    - name: Set up Cloud SDK
+      uses: google-github-actions/setup-gcloud@v0
+
+    - name: Configure docker for GCP
+      shell: bash
+      run: gcloud auth configure-docker
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ steps.secrets.outputs.GITHUB_ACTIONS_AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ steps.secrets.outputs.GITHUB_ACTIONS_AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1
+
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v1
+
+    - uses: webfactory/ssh-agent@v0.5.4
+      with:
+        ssh-private-key: ${{ steps.secrets.outputs.GITHUB_ACTIONS_SSH_READ_KEY }}
+
+    - name: Build docker image
+      shell: bash
+      run: |
+        docker build --ssh default -t $IMAGE_ADDRESS .
+      env:
+        DOCKER_BUILDKIT: '1'
+        IMAGE_ADDRESS: gcr.io/${{ inputs.gcp-project-id }}/${{ inputs.image-name }}:${{ inputs.image-version }}
+
+    - name: Push to Google Container Registry
+      shell: bash
+      run: docker push $IMAGE_ADDRESS
+      env:
+        IMAGE_ADDRESS: gcr.io/${{ inputs.gcp-project-id }}/${{ inputs.image-name }}:${{ inputs.image-version }}
+
+    - name: Retag, and push image to Amazon ECR
+      shell: bash
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        GCR_IMAGE_ADDRESS: gcr.io/${{ inputs.gcp-project-id }}/${{ inputs.image-name }}:${{ inputs.image-version }}
+      run: |
+        docker tag $GCR_IMAGE_ADDRESS $ECR_REGISTRY/${{ inputs.image-name }}:${{ inputs.image-version }}
+        docker push $ECR_REGISTRY/${{ inputs.image-name }}:${{ inputs.image-version }}

@@ -1,0 +1,39 @@
+name: Build
+description: Build image
+
+inputs:
+  gcp-service-account-key:
+    description: 'gcp service account key'
+    required: true
+  gcp-project-id:
+    description: 'gcp project id'
+    required: true
+  ssh-key-secret-name:
+    description: 'GCP secret manager key for the private git ssh key'
+    required: true
+
+
+runs:
+  using: "composite"
+  steps:
+    - id: build-and-push
+      uses: google-github-actions/auth@v0
+      with:
+        credentials_json: ${{ inputs.gcp-service-account-key }}
+
+    - id: secrets
+      uses: google-github-actions/get-secretmanager-secrets@v0
+      with:
+        secrets: |-
+          GITHUB_ACTIONS_SSH_READ_KEY:${{ inputs.gcp-project-id }}/${{ inputs.ssh-key-secret-name }}
+
+    - uses: webfactory/ssh-agent@v0.5.4
+      with:
+        ssh-private-key: ${{ steps.secrets.outputs.GITHUB_ACTIONS_SSH_READ_KEY }}
+
+    - name: Build docker image
+      shell: bash
+      run: |
+        docker build --ssh default .
+      env:
+        DOCKER_BUILDKIT: '1'
