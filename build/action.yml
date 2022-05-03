@@ -16,10 +16,17 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - id: build-and-push
+    - id: auth
       uses: google-github-actions/auth@v0
       with:
         credentials_json: ${{ inputs.gcp-service-account-key }}
+
+    - name: Set up Cloud SDK
+      uses: google-github-actions/setup-gcloud@v0
+
+    - name: Configure docker for GCP
+      shell: bash
+      run: gcloud auth configure-docker
 
     - id: secrets
       uses: google-github-actions/get-secretmanager-secrets@v0
