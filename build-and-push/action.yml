@@ -13,10 +13,10 @@ inputs:
     required: true
   aws-key-id-secret-name:
     description: 'GCP secret manager key for the ACCESS_KEY_ID'
-    required: true
+    required: false
   aws-key-secret-secret-name:
     description: 'GCP secret manager key for the AWS_SECRET_ACCESS_KEY'
-    required: true
+    required: false
   image-name:
     description: 'the image name'
     required: true
@@ -26,8 +26,8 @@ inputs:
     default: ${{ github.ref_name }}
 
 outputs:
-  ecr-registery:
-    description: ecr registery
+  ecr-registry:
+    description: ecr registry
     value: ${{ steps.login-ecr.outputs.registry }}
 
 
@@ -60,10 +60,12 @@ runs:
         aws-access-key-id: ${{ steps.secrets.outputs.GITHUB_ACTIONS_AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ steps.secrets.outputs.GITHUB_ACTIONS_AWS_SECRET_ACCESS_KEY }}
         aws-region: us-east-1
-
+      if: ${{ steps.secrets.outputs.GITHUB_ACTIONS_AWS_ACCESS_KEY_ID }} != ""
+    
     - name: Login to Amazon ECR
       id: login-ecr
       uses: aws-actions/amazon-ecr-login@v1
+      if: ${{ steps.secrets.outputs.GITHUB_ACTIONS_AWS_ACCESS_KEY_ID }} != ""
 
     - uses: webfactory/ssh-agent@v0.5.4
       with:
@@ -91,3 +93,4 @@ runs:
       run: |
         docker tag $GCR_IMAGE_ADDRESS $ECR_REGISTRY/${{ inputs.image-name }}:${{ inputs.image-version }}
         docker push $ECR_REGISTRY/${{ inputs.image-name }}:${{ inputs.image-version }}
+      if: ${{ steps.secrets.outputs.GITHUB_ACTIONS_AWS_ACCESS_KEY_ID }} != ""
