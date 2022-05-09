@@ -17,6 +17,9 @@ inputs:
   aws-key-secret-secret-name:
     description: 'GCP secret manager key for the AWS_SECRET_ACCESS_KEY'
     required: true
+  e2e-aws-cred:
+    description: 'AWS credentials for e2e tests'
+    required: false
   image-name:
     description: 'the image name'
     required: true
@@ -46,6 +49,13 @@ runs:
           GITHUB_ACTIONS_SSH_READ_KEY:${{ inputs.gcp-project-id }}/${{ inputs.ssh-key-secret-name }}
           GITHUB_ACTIONS_AWS_ACCESS_KEY_ID:${{ inputs.gcp-project-id }}/${{ inputs.aws-key-id-secret-name }}
           GITHUB_ACTIONS_AWS_SECRET_ACCESS_KEY:${{ inputs.gcp-project-id }}/${{ inputs.aws-key-secret-secret-name }}
+
+    - id: e2e-secrets
+      uses: google-github-actions/get-secretmanager-secrets@v0
+      with:
+        secrets: |-
+          GITHUB_ACTIONS_E2E_AWS_CRED:${{ inputs.gcp-project-id }}/${{ inputs.e2e-aws-cred }}
+      if: ${{ inputs.e2e-aws-cred }} != ""
 
     - name: Set up Cloud SDK
       uses: google-github-actions/setup-gcloud@v0

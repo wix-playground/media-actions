@@ -11,6 +11,9 @@ inputs:
   ssh-key-secret-name:
     description: 'GCP secret manager key for the private git ssh key'
     required: true
+  e2e-aws-cred:
+    description: 'AWS credentials for e2e tests'
+    required: false
 
 
 runs:
@@ -33,6 +36,13 @@ runs:
       with:
         secrets: |-
           GITHUB_ACTIONS_SSH_READ_KEY:${{ inputs.gcp-project-id }}/${{ inputs.ssh-key-secret-name }}
+
+    - id: e2e-secrets
+      uses: google-github-actions/get-secretmanager-secrets@v0
+      with:
+        secrets: |-
+          GITHUB_ACTIONS_E2E_AWS_CRED:${{ inputs.gcp-project-id }}/${{ inputs.e2e-aws-cred }}
+      if: ${{ inputs.e2e-aws-cred }} != ""
 
     - uses: webfactory/ssh-agent@v0.5.4
       with:
