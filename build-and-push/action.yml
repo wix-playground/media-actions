@@ -12,11 +12,17 @@ inputs:
     description: 'GCP secret manager key for the private git ssh key'
     required: true
   aws-key-id-secret-name:
-    description: 'GCP secret manager key for the ACCESS_KEY_ID'
+    description: 'GCP secret manager key for the AWS_ACCESS_KEY_ID'
     required: true
   aws-key-secret-secret-name:
     description: 'GCP secret manager key for the AWS_SECRET_ACCESS_KEY'
     required: true
+  e2e-aws-key-id-secret-name:
+    description: 'GCP secret manager key for the E2E_AWS_ACCESS_KEY_ID'
+    required: false
+  e2e-aws-key-secret-secret-name:
+    description: 'GCP secret manager key for the E2E_AWS_SECRET_ACCESS_KEY'
+    required: false
   image-name:
     description: 'the image name'
     required: true
@@ -46,6 +52,14 @@ runs:
           GITHUB_ACTIONS_SSH_READ_KEY:${{ inputs.gcp-project-id }}/${{ inputs.ssh-key-secret-name }}
           GITHUB_ACTIONS_AWS_ACCESS_KEY_ID:${{ inputs.gcp-project-id }}/${{ inputs.aws-key-id-secret-name }}
           GITHUB_ACTIONS_AWS_SECRET_ACCESS_KEY:${{ inputs.gcp-project-id }}/${{ inputs.aws-key-secret-secret-name }}
+
+    - id: e2e-secrets
+      uses: google-github-actions/get-secretmanager-secrets@v0
+      with:
+        secrets: |-
+          E2E_AWS_ACCESS_KEY_ID:${{ inputs.gcp-project-id }}/${{ inputs.e2e-aws-key-id-secret-name }}
+          E2E_AWS_SECRET_ACCESS_KEY:${{ inputs.gcp-project-id }}/${{ inputs.e2e-aws-key-secret-secret-name }}
+      if: ${{ inputs.e2e-aws-key-id-secret-name }} != ""
 
     - name: Set up Cloud SDK
       uses: google-github-actions/setup-gcloud@v0
