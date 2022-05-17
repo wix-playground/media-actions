@@ -10,6 +10,7 @@ inputs:
     required: true
   ssh-key-secret-name:
     description: 'GCP secret manager key for the private git ssh key'
+    required: true
   e2e-aws-key-id-secret-name:
     description: 'GCP secret manager key for the E2E_AWS_ACCESS_KEY_ID'
     required: false
@@ -54,6 +55,8 @@ runs:
     - name: Build docker image
       shell: bash
       run: |
-        docker build --ssh default .
+        docker build --ssh default . \ 
+        --build-arg E2E_AWS_ACCESS_KEY_ID=${{ steps.e2e-secrets.outputs.E2E_AWS_ACCESS_KEY_ID }} \
+        --build-arg E2E_AWS_SECRET_ACCESS_KEY=${{ steps.e2e-secrets.outputs.E2E_AWS_SECRET_ACCESS_KEY }}
       env:
         DOCKER_BUILDKIT: '1'
