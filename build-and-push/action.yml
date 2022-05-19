@@ -90,7 +90,7 @@ runs:
     - name: Build docker image
       shell: bash
       run: |
-        docker build --ssh default --build-arg E2E_GCP_SERVICE_ACCOUNT=${{ steps.e2e-secrets.outputs.E2E_GCP_SERVICE_ACCOUNT }} --build-arg E2E_AWS_ACCESS_KEY_ID=${{ steps.e2e-secrets.outputs.E2E_AWS_ACCESS_KEY_ID }} --build-arg E2E_AWS_SECRET_ACCESS_KEY=${{ steps.e2e-secrets.outputs.E2E_AWS_SECRET_ACCESS_KEY }} -t $IMAGE_ADDRESS .
+        docker build --ssh default --build-arg E2E_GCP_SERVICE_ACCOUNT='${{ steps.e2e-secrets.outputs.E2E_GCP_SERVICE_ACCOUNT }}' --build-arg E2E_AWS_ACCESS_KEY_ID='${{ steps.e2e-secrets.outputs.E2E_AWS_ACCESS_KEY_ID }}' --build-arg E2E_AWS_SECRET_ACCESS_KEY='${{ steps.e2e-secrets.outputs.E2E_AWS_SECRET_ACCESS_KEY }}' -t $IMAGE_ADDRESS .
       env:
         DOCKER_BUILDKIT: '1'
         IMAGE_ADDRESS: gcr.io/${{ inputs.gcp-project-id }}/${{ inputs.image-name }}:${{ inputs.image-version }}
