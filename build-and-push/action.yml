@@ -109,6 +109,3 @@ runs:
       run: |
         docker tag $GCR_IMAGE_ADDRESS $ECR_REGISTRY/${{ inputs.image-name }}:${{ inputs.image-version }}
         docker push $ECR_REGISTRY/${{ inputs.image-name }}:${{ inputs.image-version }}
-
-
-  --build-arg E2E_GCP_SERVICE_ACCOUNT=${{ steps.e2e-secrets.outputs.E2E_AWS_SECRET_ACCESS_KEY }}
