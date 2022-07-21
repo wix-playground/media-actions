@@ -33,6 +33,10 @@ inputs:
     description: 'the image name'
     required: false
     default: ${{ github.ref_name }}
+  ecr-enabled:
+    description: 'Push both registeries by default but enable a simple way to disable aws'
+    required: false
+    default: 'true'
 
 outputs:
   ecr-registery:
@@ -80,6 +84,7 @@ runs:
         aws-region: us-east-1
 
     - name: Login to Amazon ECR
+      if: ${{ inputs.ecr-enabled == 'true' }}
       id: login-ecr
       uses: aws-actions/amazon-ecr-login@v1
 
@@ -102,6 +107,7 @@ runs:
         IMAGE_ADDRESS: gcr.io/${{ inputs.gcp-project-id }}/${{ inputs.image-name }}:${{ inputs.image-version }}
 
     - name: Retag, and push image to Amazon ECR
+      if: ${{ inputs.ecr-enabled == 'true' }}
       shell: bash
       env:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
